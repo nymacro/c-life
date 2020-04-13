@@ -2,6 +2,25 @@
 #include <string.h>
 #include <SDL2/SDL.h>
 
+typedef struct {
+  uint32_t next_second;
+  uint16_t count;
+} frame_counter_t;
+
+void frame_counter_init(frame_counter_t *counter) {
+  counter->count = 0;
+  counter->next_second = SDL_GetTicks()+1000;
+}
+
+void frame_counter(frame_counter_t *counter, uint32_t ticks) {
+  counter->count++;
+  if (ticks >= counter->next_second) {
+    printf("fps: %i\n", counter->count);
+    counter->next_second = ticks + 1000;
+    counter->count = 0;
+  }
+}
+
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 #define BLOCK_WIDTH 8
@@ -107,14 +126,17 @@ void life_render(life_t *l, SDL_Renderer *r) {
 }
 
 void life(life_t *l) {
+  frame_counter_t counter;
   uint8_t pause = 0, fullscreen = 0;
   SDL_Window *window = SDL_CreateWindow("Game of Life",
                                         0, 0,
                                         WINDOW_WIDTH, WINDOW_HEIGHT,
                                         0);
   if (!window) abort();
-  SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
+  SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
   if (!renderer) abort();
+
+  frame_counter_init(&counter);
 
   do {
     SDL_Event e;
@@ -145,6 +167,7 @@ void life(life_t *l) {
 
     life_render(l, renderer);
     SDL_RenderPresent(renderer);
+    frame_counter(&counter, SDL_GetTicks());
 
     if (!pause)
       life_tick(l);
@@ -156,6 +179,7 @@ void life(life_t *l) {
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
 }
+
 
 int main(int argc, char *argv[]) {
   SDL_Init(SDL_INIT_VIDEO);
