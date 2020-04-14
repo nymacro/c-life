@@ -39,15 +39,14 @@ typedef struct {
   arena_t arenas[ARENA_COUNT];
 } life_t;
 
-arena_t *make_arena() {
-  arena_t *ptr = (arena_t*)malloc(sizeof(arena_t));
-  return ptr;
-}
-
 life_t *make_life() {
   life_t *ptr = (life_t*)malloc(sizeof(life_t));
   ptr->i = 0;
   return ptr;
+}
+
+void free_life(life_t *ptr) {
+  free(ptr);
 }
 
 #define ARENA_IDX(a, x, y)                              \
@@ -79,7 +78,9 @@ uint8_t life_neighbours(life_t *l, uint8_t x, uint8_t y) {
                        ? (i)-LIFE_DRAIN_AMOUNT                          \
                        : 0)                                             \
 
-void life_tick(life_t *l) {
+void life_tick(life_t *l,
+               void (*cb)(void *, uint8_t, uint8_t, uint8_t),
+               void *cb_data) {
   arena_t *next = &l->arenas[(l->i+1) % ARENA_COUNT];
   for (uint8_t y = 0; y < ARENA_HEIGHT; ++y) {
     for (uint8_t x = 0; x < ARENA_WIDTH; ++x) {
@@ -99,6 +100,8 @@ void life_tick(life_t *l) {
       } else {
         *cell = LIFE_DRAIN(alive);
       }
+      if (cb)
+        cb(cb_data, x, y, *cell);
     }
   }
 
@@ -123,6 +126,13 @@ void life_render(life_t *l, SDL_Renderer *r) {
       SDL_RenderFillRect(r, &rect);
     }
   }
+}
+
+void life_render_block(void *data, uint8_t x, uint8_t y, uint8_t i) {
+  SDL_Renderer *r = (SDL_Renderer*)data;
+  SDL_Rect rect = { x * BLOCK_WIDTH, y * BLOCK_HEIGHT, BLOCK_WIDTH, BLOCK_HEIGHT };
+  SDL_SetRenderDrawColor(r, i, 0, 0, 255);
+  SDL_RenderFillRect(r, &rect);
 }
 
 void life(life_t *l) {
@@ -165,12 +175,14 @@ void life(life_t *l) {
       }
     }
 
-    life_render(l, renderer);
+    if (pause) {
+      life_render(l, renderer);
+    } else {
+      life_tick(l, life_render_block, renderer);
+    }
     SDL_RenderPresent(renderer);
     frame_counter(&counter, SDL_GetTicks());
 
-    if (!pause)
-      life_tick(l);
   } while(1);
 
  done:
@@ -184,5 +196,6 @@ int main(int argc, char *argv[]) {
   life_t *l = make_life();
   life_randomize(l);
   life(l);
+  free_life(l);
   return 0;
 }
