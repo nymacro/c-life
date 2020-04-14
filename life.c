@@ -64,8 +64,8 @@ uint8_t life_neighbours(life_t *l, uint8_t x, uint8_t y) {
     for (uint8_t x_ = 0; x_ < 3; ++x_) {
       if (x_ == 1 && y_ == 1) continue; /* don't count yourself */
 
-      uint8_t xx = (x + x_ + (ARENA_WIDTH-1)) % ARENA_WIDTH;
-      uint8_t yy = (y + y_ + (ARENA_HEIGHT-1)) % ARENA_HEIGHT;
+      uint8_t xx = (x + x_ - 1) % ARENA_WIDTH;
+      uint8_t yy = (y + y_ - 1) % ARENA_HEIGHT;
       if (LIFE_ALIVE(LIFE_IDX(l, xx, yy))) {
         ++neighbours;
       }
@@ -90,18 +90,14 @@ void life_tick(life_t *l) {
       /* get cell for next state */
       uint8_t *cell = &ARENA_IDX(*next, x, y);
 
-      if (alivep && neighbours < 2) {
-        *cell = LIFE_DRAIN(alive);
-      } else if (alivep && neighbours > 3) {
-        *cell = LIFE_DRAIN(alive);
-      } else if (!alivep && neighbours == 3) {
+      if (!alivep && neighbours == 3) {
           *cell = LIFE_ALIVE_VALUE;
+      } else if (alivep && (neighbours < 2 || neighbours > 3)) {
+        *cell = LIFE_DRAIN(alive);
+      } else if (alivep) {
+        *cell = alive;
       } else {
-        if (alivep) {
-          *cell = alive;
-        } else {
-          *cell = LIFE_DRAIN(alive);
-        }
+        *cell = LIFE_DRAIN(alive);
       }
     }
   }
