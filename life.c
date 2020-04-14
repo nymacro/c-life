@@ -1,3 +1,4 @@
+/* this time in C */
 #include <stdio.h>
 #include <string.h>
 #include <SDL2/SDL.h>
@@ -32,9 +33,10 @@ typedef struct {
   uint8_t cells[ARENA_HEIGHT][ARENA_WIDTH];
 } arena_t;
 
+#define ARENA_COUNT 2
 typedef struct {
   uint8_t i;
-  arena_t arenas[2];
+  arena_t arenas[ARENA_COUNT];
 } life_t;
 
 arena_t *make_arena() {
@@ -73,10 +75,12 @@ uint8_t life_neighbours(life_t *l, uint8_t x, uint8_t y) {
 }
 
 #define LIFE_DRAIN_AMOUNT 16
-#define LIFE_DRAIN(i) (((i) > 0) ? ((LIFE_DRAIN_AMOUNT < (i)) ? (i)-LIFE_DRAIN_AMOUNT : 0) : 0)
+#define LIFE_DRAIN(i) (((i) > 0 && LIFE_DRAIN_AMOUNT < (i))             \
+                       ? (i)-LIFE_DRAIN_AMOUNT                          \
+                       : 0)                                             \
 
 void life_tick(life_t *l) {
-  arena_t *next = &l->arenas[(l->i+1) % 2];
+  arena_t *next = &l->arenas[(l->i+1) % ARENA_COUNT];
   for (uint8_t y = 0; y < ARENA_HEIGHT; ++y) {
     for (uint8_t x = 0; x < ARENA_WIDTH; ++x) {
       uint8_t neighbours = life_neighbours(l, x, y);
@@ -102,7 +106,7 @@ void life_tick(life_t *l) {
     }
   }
 
-  l->i = (l->i+1) % 2;
+  l->i = (l->i+1) % ARENA_COUNT;
 }
 
 void life_randomize(life_t *l) {
@@ -146,8 +150,8 @@ void life(life_t *l) {
         printf("quitting\n");
         goto done;
       case SDL_KEYDOWN:
-        printf("keydown\n");
         switch (e.key.keysym.sym) {
+        case SDLK_q:
         case SDLK_ESCAPE: goto done;
         case SDLK_f:
           fullscreen = !fullscreen;
@@ -171,8 +175,6 @@ void life(life_t *l) {
 
     if (!pause)
       life_tick(l);
-
-    //SDL_Delay(30);
   } while(1);
 
  done:
