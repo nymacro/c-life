@@ -1,4 +1,4 @@
-/* this time in C */
+/* life. this time in C */
 #include <stdio.h>
 #include <string.h>
 #include <SDL2/SDL.h>
@@ -189,7 +189,6 @@ void life(life_t *l) {
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
 }
-
 
 int main(int argc, char *argv[]) {
   SDL_Init(SDL_INIT_VIDEO);
